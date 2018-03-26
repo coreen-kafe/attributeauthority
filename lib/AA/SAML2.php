@@ -50,7 +50,8 @@ class sspmod_aa_AA_SAML2
         if (!($binding instanceof \SAML2\SOAP)) { 
             throw new SimpleSAML_Error_BadRequest('[aa] Unsupported binding. It must be SAML2_SOAP.');
         }
-        SimpleSAML_Logger::debug('[aa] binding: '.var_export($binding, true));
+
+        SimpleSAML\Logger::debug('[aa] binding: '.var_export($binding, true));
 
         return $binding;
     }
@@ -58,7 +59,7 @@ class sspmod_aa_AA_SAML2
     private function getQuery()
     {
         $query = $this->binding->receive();
-        SimpleSAML_Logger::debug('[aa] query: '.var_export($query, true));
+        SimpleSAML\Logger::debug('[aa] query: '.var_export($query, true));
 
         if (!($query instanceof \SAML2\AttributeQuery)) {
             throw new SimpleSAML_Error_BadRequest('Invalid message received on AttributeQuery endpoint.');
@@ -124,7 +125,7 @@ class sspmod_aa_AA_SAML2
 
         /* Authenticate the requestor by verifying the TLS certificate used for the HTTP query */
         if (array_key_exists('SSL_CLIENT_VERIFY', $_SERVER)) {
-            SimpleSAML_Logger::debug('[aa] Request was made using the following certificate: '.var_export($_SERVER['SSL_CLIENT_VERIFY'], 1));
+            SimpleSAML\Logger::debug('[aa] Request was made using the following certificate: '.var_export($_SERVER['SSL_CLIENT_VERIFY'], 1));
         }
         if (array_key_exists('SSL_CLIENT_VERIFY', $_SERVER)
             && $_SERVER['SSL_CLIENT_VERIFY']
@@ -146,7 +147,7 @@ class sspmod_aa_AA_SAML2
             foreach ($spCertArray['certFingerprint'] as $fingerprint) {
                 if ($fingerprint && $clientCertFingerprint == $fingerprint) {
                     $client_is_authenticated = true;
-                    SimpleSAML_Logger::debug('[aa] SSL certificate is checked and valid.');
+                    SimpleSAML\Logger::debug('[aa] SSL certificate is checked and valid.');
                     break;
                 }
             }
@@ -156,7 +157,7 @@ class sspmod_aa_AA_SAML2
             }
         } else {
             /* The request may be signed, so this is not fatal */
-            SimpleSAML_Logger::debug('[aa] SSL client certificate does not exist.');
+            SimpleSAML\Logger::debug('[aa] SSL client certificate does not exist.');
         }
 
         /* Authenticate the requestor by verifying the XML signature on the query */
@@ -164,24 +165,24 @@ class sspmod_aa_AA_SAML2
         if (count($certs_of_query) > 0) {
             if (sspmod_saml_Message::checkSign($this->spMetadata, $this->query)) {
                 $client_is_authenticated = true;
-                SimpleSAML_Logger::debug('[aa] AttributeQuery signature is checked and valid.');
+                SimpleSAML\Logger::debug('[aa] AttributeQuery signature is checked and valid.');
             } else {
                 /* An invalid or unverifiable signature is fatal */
                 throw new SimpleSAML_Error_Exception('[aa] The signature of the AttributeQuery is wrong!');
             }
         } else {
             /* The request may be protected by HTTP TLS (X.509) authentication, so this is not fatal */
-            SimpleSAML_Logger::debug('[aa] AttributeQuery has no signature.');
+            SimpleSAML\Logger::debug('[aa] AttributeQuery has no signature.');
         }
 
         if (!$client_is_authenticated) {
-            SimpleSAML_Logger::info('[aa] Attribute query was not authenticated. Drop.');
+            SimpleSAML\Logger::info('[aa] Attribute query was not authenticated. Drop.');
             header('HTTP/1.1 401 Unauthorized');
             header('WWW-Authenticate: None', false);
             echo 'Not authenticated. Neither query signature nor SSL client certificate was available.';
             exit;
         } else {
-            SimpleSAML_Logger::debug('[aa] Attribute query was authenticated.');
+            SimpleSAML\Logger::debug('[aa] Attribute query was authenticated.');
         }
     }
 
@@ -196,7 +197,7 @@ class sspmod_aa_AA_SAML2
             $nameIdFormat = $nameId['Format'];
         }
 
-        SimpleSAML_Logger::info('[aa] Received attribute query for '.$nameId['Value'].' (nameIdFormat: '.$nameIdFormat.')');
+        SimpleSAML\Logger::info('[aa] Received attribute query for '.$nameId['Value'].' (nameIdFormat: '.$nameIdFormat.')');
 
         /* Get the attributes from the AuthSource */
         $spMetadataArray = $this->spMetadata->toArray();
@@ -236,11 +237,11 @@ class sspmod_aa_AA_SAML2
     {
         $requestedAttributes = $this->query->getAttributes();
         if (count($requestedAttributes) === 0) {
-            SimpleSAML_Logger::debug(
+            SimpleSAML\Logger::debug(
                 '[aa] No attributes requested - return all previously resolved attributes: '.var_export($attributes, true)
             );
         } elseif ($this->query->getAttributeNameFormat() !== $this->attributeNameFormat) {
-            SimpleSAML_Logger::debug(
+            SimpleSAML\Logger::debug(
                 '[aa] NameFormat mismatch - no attributes returned. Expected: '.$this->attributeNameFormat.' Requested: '.$this->query->getAttributeNameFormat()
             );
             $attributes = array();
@@ -248,7 +249,7 @@ class sspmod_aa_AA_SAML2
             foreach ($attributes as $name => $values) {
                 if (!array_key_exists($name, $requestedAttributes)) {
                     /* They didn't request this attribute. */
-                    SimpleSAML_Logger::debug('[aa] Remove attribute because it was not requested: '.$name);
+                    SimpleSAML\Logger::debug('[aa] Remove attribute because it was not requested: '.$name);
                     unset($attributes[$name]);
                     continue;
                 }
@@ -302,8 +303,8 @@ class sspmod_aa_AA_SAML2
 
     private function sendResponse($response)
     {
-        SimpleSAML_Logger::debug('[aa] Sending: '.var_export($response, true));
-        SimpleSAML_Logger::info('[aa] Sending assertion.');
+        SimpleSAML\Logger::debug('[aa] Sending: '.var_export($response, true));
+        SimpleSAML\Logger::info('[aa] Sending assertion.');
         $this->binding->send($response);
     }
 }

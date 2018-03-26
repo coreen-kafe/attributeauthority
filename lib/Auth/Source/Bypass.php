@@ -42,7 +42,7 @@ class sspmod_aa_Auth_Source_Bypass extends SimpleSAML_Auth_Source
             throw new SimpleSAML_Error_Exception("AA configuration error, 'uid' not found or not a string.");
         }
 
-        SimpleSAML_Logger::debug('[aa] auth source Bypass: config uid: '.$config['uid']);
+        SimpleSAML\Logger::debug('[aa] auth source Bypass: config uid: '.$config['uid']);
         $this->uid = $config['uid'];
     }
 
