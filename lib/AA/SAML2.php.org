@@ -45,7 +45,6 @@ class sspmod_aa_AA_SAML2
     {
         /* Receiving the attribute query */
         $binding = SAML2_Binding::getCurrentBinding();
-	SimpleSAML\Logger::info('[aa]: '. var_export($binding, true));
 
         /* Supported binding is SOAP */
         if (!($binding instanceof \SAML2\SOAP)) { 
@@ -85,11 +84,6 @@ class sspmod_aa_AA_SAML2
         $this->aaMetadata = $aaMetadata;
         $this->spEntityId = $spEntityId;
         $this->spMetadata = $spMetadata;
-        
-        SimpleSAML\Logger::info('[aaentityid] '.$aaEntityId);
-        //SimpleSAML\Logger::info($aaMetadata);
-        SimpleSAML\Logger::info('[spentityid] '.$spEntityId);
-        //SimpleSAML\Logger::info($spMetadata);
     }
 
     private function getAttributeNameFormat()
@@ -200,10 +194,10 @@ class sspmod_aa_AA_SAML2
             throw new SimpleSAML_Error_BadRequest('[aa] Error getting NameID from AttributeQuery.');
         }
         if (array_key_exists('Format', $nameId)) {
-            $nameIdFormat = $nameId->Format;
+            $nameIdFormat = $nameId['Format'];
         }
 
-        SimpleSAML\Logger::info('[aa] Received attribute query for '.$nameId->value.' (nameIdFormat: '.$nameIdFormat.')');
+        SimpleSAML\Logger::info('[aa] Received attribute query for '.$nameId['Value'].' (nameIdFormat: '.$nameIdFormat.')');
 
         /* Get the attributes from the AuthSource */
         $spMetadataArray = $this->spMetadata->toArray();
@@ -213,7 +207,7 @@ class sspmod_aa_AA_SAML2
             'Attributes' => $attributes,
             'Destination' => $spMetadataArray,
             'Source' => $aaMetadataArray,
-            'aa:nameId' => $nameId->value,
+            'aa:nameId' => $nameId['Value'],
             'aa:nameIdFormat' => $nameIdFormat,
         );
 
@@ -281,7 +275,7 @@ class sspmod_aa_AA_SAML2
         $sc->SubjectConfirmationData->NotOnOrAfter = time() + $this->config->getInteger('validFor');
         $sc->SubjectConfirmationData->InResponseTo = $this->query->getId();
 
-        $assertion = new SAML2\Assertion();
+        $assertion = new SAML2_Assertion();
         $assertion->setSubjectConfirmation(array($sc));
         $assertion->setIssuer($this->aaEntityId);
         $assertion->setNameId($this->query->getNameId());
@@ -295,13 +289,10 @@ class sspmod_aa_AA_SAML2
         }
 
         /* The Response */
-        //$response = new SAML2\Response($this->query->toUnsignedXML());
-        $response = new SAML2\Response();
-
+        $response = new SAML2_Response();
         $response->setRelayState($this->query->getRelayState());
         $response->setIssuer($this->aaEntityId);
-        $response->setDestination($this->query->getId());
-        $response->setInResponseTo($this->query->getIssuer());
+        $response->setInResponseTo($this->query->getId());
         $response->setAssertions(array($assertion));
         if ($this->signResponse) {
             sspmod_saml_Message::addSign($this->aaMetadata, $this->spMetadata, $response);
@@ -314,7 +305,6 @@ class sspmod_aa_AA_SAML2
     {
         SimpleSAML\Logger::debug('[aa] Sending: '.var_export($response, true));
         SimpleSAML\Logger::info('[aa] Sending assertion.');
-
         $this->binding->send($response);
     }
 }
